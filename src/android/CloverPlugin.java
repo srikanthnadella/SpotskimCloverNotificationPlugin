@@ -17,6 +17,7 @@ import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
@@ -31,6 +32,7 @@ import com.clover.sdk.v1.merchant.Merchant;
 import com.clover.sdk.v1.merchant.MerchantAddress;
 import com.clover.sdk.v1.merchant.MerchantConnector;
 import com.clover.sdk.v1.merchant.MerchantIntent;
+import com.clover.sdk.v1.app.AppNotificationIntent;
 
 import java.text.DateFormat;
 import java.util.Date;
@@ -63,121 +65,121 @@ public class CloverPlugin extends CordovaPlugin implements MerchantConnector.OnM
                                                      "/" + notificationIntent.getStringExtra(AppNotificationIntent.EXTRA_PAYLOAD));
         }
     }
-}
-@Override
-public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
-try {
-if (ACTION_GET_MERCHANT.equals(action)) {
-//JSONObject arg_object = args.getJSONObject(0);
-
-if (this.notificationCallbackContext == null) {
-this.batteryCallbackContext = callbackContext;
-}
-
-IntentFilter intentFilter = new IntentFilter();
-intentFilter.addAction(com.clover.sdk.app.intent.action.APP_NOTIFICATION);
-if (this.receiver == null) {
-this.receiver = new BroadcastReceiver() {
-@Override
-public void onReceive(Context context, Intent intent) {
-sendNotification(intent);
-}
-};
-cordova.getActivity().registerReceiver(this.receiver, intentFilter);
-
-
-startAccountChooser();
-connect();
-getMerchant();
-
-if(merchantConnector == null)
-callbackContext.error("MerchantConnector is null");
-else
-callbackContext.success(merchantID+ "/" +deviceID);
-disconnect();
-return true;
-}
-callbackContext.error("Invalid action");
-return false;
-} catch(Exception e) {
-System.err.println("Exception: " + e.getMessage());
-callbackContext.error("Exception: " + e.getMessage());
-return false;
-}
-}
-
-private static final int REQUEST_ACCOUNT = 0;
-private MerchantConnector merchantConnector;
-private Account account;
-private String merchantID;
-private String deviceID;
-
-private void startAccountChooser() {
-//        Intent intent = AccountManager.newChooseAccountIntent(null, null, new String[]{CloverAccount.CLOVER_ACCOUNT_TYPE}, false, null, null, null, null);
-//        startActivityForResult(intent, REQUEST_ACCOUNT);
-AccountManager accountManager = AccountManager.get(this.cordova.getActivity().getApplicationContext());
-Account[] accounts = accountManager.getAccountsByType(CloverAccount.CLOVER_ACCOUNT_TYPE);
-for (Account acc : accounts){
-account = acc;
-break;
-}
-
-}
-
-//
-//    private void startAccountChooser() {
-//        Intent intent = AccountManager.newChooseAccountIntent(null, null, new String[]{CloverAccount.CLOVER_ACCOUNT_TYPE}, false, null, null, null, null);
-//        startActivityForResult(intent, REQUEST_ACCOUNT);
-//    }
-//
-//    @Override
-//    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-//        if (requestCode == REQUEST_ACCOUNT) {
-//            if (resultCode == RESULT_OK) {
-//                String name = data.getStringExtra(AccountManager.KEY_ACCOUNT_NAME);
-//                String type = data.getStringExtra(AccountManager.KEY_ACCOUNT_TYPE);
-//                account = new Account(name, type);
-//            } else {
-//                if (account == null) {
-//                    finish();
-//                }
-//            }
-//        }
-//    }
-
-
-private void connect() {
-disconnect();
-if (account != null) {
-merchantConnector = new MerchantConnector(cordova.getActivity(), account, this);
-merchantConnector.setOnMerchantChangedListener(this);
-merchantConnector.connect();
-}
-}
-
-private void disconnect() {
-if (merchantConnector != null) {
-merchantConnector.disconnect();
-merchantConnector = null;
-}
-}
-
-
-private void getMerchant() {
-Merchant merchant = null;
-try {
-merchant = merchantConnector.getMerchant();
-}
-catch (Exception e){
-
-}
-merchantID = merchant.getId();
-deviceID = merchant.getDeviceId();
-
-}
-
-private void updateMerchant(String status, ResultStatus resultStatus, Merchant result) {
-merchantID = result.getId();
-deviceID = result.getDeviceId();
-}
+    
+    @Override
+    public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
+        try {
+            if (ACTION_GET_MERCHANT.equals(action)) {
+                //JSONObject arg_object = args.getJSONObject(0);
+                
+                if (this.notificationCallbackContext == null) {
+                    this.notificationCallbackContext = callbackContext;
+                }
+                
+                IntentFilter intentFilter = new IntentFilter();
+                intentFilter.addAction(AppNotificationIntent.ACTION_APP_NOTIFICATION);
+                if (this.receiver == null) {
+                    this.receiver = new BroadcastReceiver() {
+                        @Override
+                        public void onReceive(Context context, Intent intent) {
+                            sendNotification(intent);
+                        }
+                    };
+                    cordova.getActivity().registerReceiver(this.receiver, intentFilter);
+                }
+                
+                startAccountChooser();
+                connect();
+                getMerchant();
+                
+                if(merchantConnector == null)
+                    callbackContext.error("MerchantConnector is null");
+                else
+                    callbackContext.success(merchantID+ "/" +deviceID);
+                disconnect();
+                return true;
+            }
+            callbackContext.error("Invalid action");
+            return false;
+        } catch(Exception e) {
+            System.err.println("Exception: " + e.getMessage());
+            callbackContext.error("Exception: " + e.getMessage());
+            return false;
+        }
+    }
+    
+    private static final int REQUEST_ACCOUNT = 0;
+    private MerchantConnector merchantConnector;
+    private Account account;
+    private String merchantID;
+    private String deviceID;
+    
+    private void startAccountChooser() {
+        //        Intent intent = AccountManager.newChooseAccountIntent(null, null, new String[]{CloverAccount.CLOVER_ACCOUNT_TYPE}, false, null, null, null, null);
+        //        startActivityForResult(intent, REQUEST_ACCOUNT);
+        AccountManager accountManager = AccountManager.get(this.cordova.getActivity().getApplicationContext());
+        Account[] accounts = accountManager.getAccountsByType(CloverAccount.CLOVER_ACCOUNT_TYPE);
+        for (Account acc : accounts){
+            account = acc;
+            break;
+        }
+        
+    }
+    
+    //
+    //    private void startAccountChooser() {
+    //        Intent intent = AccountManager.newChooseAccountIntent(null, null, new String[]{CloverAccount.CLOVER_ACCOUNT_TYPE}, false, null, null, null, null);
+    //        startActivityForResult(intent, REQUEST_ACCOUNT);
+    //    }
+    //
+    //    @Override
+    //    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    //        if (requestCode == REQUEST_ACCOUNT) {
+    //            if (resultCode == RESULT_OK) {
+    //                String name = data.getStringExtra(AccountManager.KEY_ACCOUNT_NAME);
+    //                String type = data.getStringExtra(AccountManager.KEY_ACCOUNT_TYPE);
+    //                account = new Account(name, type);
+    //            } else {
+    //                if (account == null) {
+    //                    finish();
+    //                }
+    //            }
+    //        }
+    //    }
+    
+    
+    private void connect() {
+        disconnect();
+        if (account != null) {
+            merchantConnector = new MerchantConnector(cordova.getActivity(), account, this);
+            merchantConnector.setOnMerchantChangedListener(this);
+            merchantConnector.connect();
+        }
+    }
+    
+    private void disconnect() {
+        if (merchantConnector != null) {
+            merchantConnector.disconnect();
+            merchantConnector = null;
+        }
+    }
+    
+    
+    private void getMerchant() {
+        Merchant merchant = null;
+        try {
+            merchant = merchantConnector.getMerchant();
+        }
+        catch (Exception e){
+            
+        }
+        merchantID = merchant.getId();
+        deviceID = merchant.getDeviceId();
+        
+    }
+    
+    private void updateMerchant(String status, ResultStatus resultStatus, Merchant result) {
+        merchantID = result.getId();
+        deviceID = result.getDeviceId();
+    }
 }
